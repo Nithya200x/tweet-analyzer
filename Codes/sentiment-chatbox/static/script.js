@@ -1,49 +1,34 @@
-function analyzeSentiment() {
+async function analyzeSentiment() {
     const userInput = document.getElementById('userInput').value.trim();
     const resultDiv = document.getElementById('result');
     const loadingDiv = document.getElementById('loading');
 
-    if (userInput === "") {
-        alert("Please enter some text!");
+    if (userInput === '') {
+        resultDiv.innerHTML = '<span class="neutral">Please enter a tweet!</span>';
         return;
     }
 
-    resultDiv.style.opacity = 0; // Hide previous result
     loadingDiv.style.display = 'block';
-    loadingDiv.innerHTML = ''; // Clear previous loading text
-    typeWriterEffect("Analyzing...", loadingDiv);
+    resultDiv.innerHTML = '';
 
-    fetch('/analyze', {
+    const response = await fetch('/analyze', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: userInput }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingDiv.style.display = 'none';
-        resultDiv.innerHTML = `Sentiment: <span>${data.sentiment}</span>`;
-        resultDiv.style.opacity = 1;
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-        loadingDiv.style.display = 'none';
-        resultDiv.innerHTML = "Something went wrong. Please try again.";
-        resultDiv.style.opacity = 1;
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: userInput })
     });
-}
 
-function typeWriterEffect(text, element) {
-    let i = 0;
-    const speed = 100; // typing speed (milliseconds)
+    const data = await response.json();
 
-    function type() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(type, speed);
-        }
+    loadingDiv.style.display = 'none';
+
+    let sentimentClass = '';
+    if (data.sentiment === 'Positive') {
+        sentimentClass = 'positive';
+    } else if (data.sentiment === 'Negative') {
+        sentimentClass = 'negative';
+    } else {
+        sentimentClass = 'neutral';
     }
-    type();
+
+    resultDiv.innerHTML = `<span class="${sentimentClass}">${data.sentiment} (${data.confidence}%)</span>`;
 }
